@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Jadwal Armada</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f6f9; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { border-bottom: 2px solid #007bff; padding-bottom: 5px; color: #007bff; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .loading { font-style: italic; color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>1. Pengisian Jadwal Armada</h2>
+    <form id="jadwalForm">
+        <div class="form-group">
+            <label>Pilih Armada:</label>
+            <select id="armada" required>
+                <option value="">-- Pilih Armada --</option>
+                <option value="Armada 01">Armada 01</option>
+                <option value="Armada 02">Armada 02</option>
+                <option value="Armada 03">Armada 03</option>
+                <option value="Armada 04">Armada 04</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Tanggal Operasional:</label>
+            <input type="date" id="tanggal" required>
+        </div>
+        <div class="form-group">
+            <label>Diisi Oleh (Nama Crew):</label>
+            <input type="text" id="pengisi" placeholder="Nama Anda" required>
+        </div>
+        <div class="form-group">
+            <label>Nilai Sewa (Rp):</label>
+            <input type="number" id="nilaiSewa" placeholder="Contoh: 1500000" required>
+        </div>
+        <div class="form-group">
+            <label>Lokasi Penjemputan:</label>
+            <input type="text" id="penjemputan" placeholder="Kota / Alamat Muat" required>
+        </div>
+        <div class="form-group">
+            <label>Lokasi Tujuan:</label>
+            <input type="text" id="tujuan" placeholder="Kota / Alamat Bongkar" required>
+        </div>
+        <button type="submit">Simpan Jadwal</button>
+    </form>
+
+    <h2>2. Jadwal 4 Armada (2 Bulan Ke Depan)</h2>
+    <p class="loading" id="statusMuat">Memuat jadwal...</p>
+    <table id="tabelJadwal">
+        <thead>
+            <tr>
+                <th>Armada</th>
+                <th>Tanggal</th>
+                <th>Driver/Crew</th>
+                <th>Sewa</th>
+                <th>Penjemputan</th>
+                <th>Tujuan</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data akan muncul di sini secara otomatis -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // PENTING: Ganti teks di bawah ini dengan Web App URL yang kamu salin dari Google Apps Script
+    const API_URL = "https://script.google.com/macros/s/AKfycbwPbCZy1-SF8GJsWjKj_vDHICE-5hh3n0s_2EvHKWGphzL3ETj_5lq-VIdbrUGXiM13/exec";
+
+    // Fungsi Kirim Data ke Google Sheets
+    document.getElementById('jadwalForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const data = {
+            armada: document.getElementById('armada').value,
+            tanggal: document.getElementById('tanggal').value,
+            pengisi: document.getElementById('pengisi').value,
+            nilaiSewa: document.getElementById('nilaiSewa').value,
+            penjemputan: document.getElementById('penjemputan').value,
+            tujuan: document.getElementById('tujuan').value
+        };
+
+        alert("Sedang menyimpan data, mohon tunggu...");
+
+        fetch(API_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Menghindari masalah CORS di browser
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(() => {
+            alert("Jadwal berhasil disimpan!");
+            document.getElementById('jadwalForm').reset();
+            muatJadwal(); // Refresh tabel setelah input
+        }).catch(err => alert("Gagal menyimpan: " + err));
+    });
+
+    // Fungsi Ambil Data & Filter 2 Bulan ke Depan
+    function muatJadwal() {
+        fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+            const tbody = document.querySelector('#tabelJadwal tbody');
+            tbody.innerHTML = '';
+            document.getElementById('statusMuat').style.display = 'none';
+
+            // Hitung rentang tanggal (Hari ini sampai 2 bulan ke depan)
+            const hariIni = new Date();
+            hariIni.setHours(0,0,0,0);
+            const duaBulanLagi = new Date();
+            duaBulanLagi.setMonth(duaBulanLagi.getMonth() + 2);
+
+            // Urutkan data berdasarkan tanggal terdekat
+            data.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+
+            let dataDitemukan = false;
+
+            data.forEach(item => {
+                const tglJadwal = new Date(item.tanggal);
+                
+                // FILTER: Hanya tampilkan jika masuk dalam rentang 2 bulan ke depan
+                if (tglJadwal >= hariIni && tglJadwal <= duaBulanLagi) {
+                    dataDitemukan = true;
+                    const formatUang = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.nilaiSewa);
+                    const formatTgl = tglJadwal.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                    
+                    const row = `<tr>
+                        <td><strong>${item.armada}</strong></td>
+                        <td>${formatTgl}</td>
+                        <td>${item.pengisi}</td>
+                        <td>${formatUang}</td>
+                        <td>${item.penjemputan}</td>
+                        <td>${item.tujuan}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                }
+            });
+
+            if (!dataDitemukan) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada jadwal dalam 2 bulan ke depan.</td></tr>';
+            }
+        })
+        .catch(err => {
+            document.getElementById('statusMuat').innerText = "Gagal memuat data.";
+            console.error(err);
+        });
+    }
+
+    // Jalankan fungsi muat data saat web pertama kali dibuka
+    muatJadwal();
+</script>
+</body>
+</html>
