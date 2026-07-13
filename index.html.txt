@@ -78,7 +78,6 @@
 </div>
 
 <script>
-    // PENTING: Ganti teks di bawah ini dengan Web App URL yang kamu salin dari Google Apps Script
     const API_URL = "https://script.google.com/macros/s/AKfycbwgmKlBX-NmW3g9ojtWjzDk7TatuVLqgwWowMubdQzUxVvzLHjuW-kHPiv0LxkgxV6a/exec";
 
     // Fungsi Kirim Data ke Google Sheets
@@ -98,13 +97,13 @@
 
         fetch(API_URL, {
             method: 'POST',
-            mode: 'no-cors', // Menghindari masalah CORS di browser
+            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         }).then(() => {
             alert("Jadwal berhasil disimpan!");
             document.getElementById('jadwalForm').reset();
-            muatJadwal(); // Refresh tabel setelah input
+            muatJadwal();
         }).catch(err => alert("Gagal menyimpan: " + err));
     });
 
@@ -117,13 +116,11 @@
             tbody.innerHTML = '';
             document.getElementById('statusMuat').style.display = 'none';
 
-            // Hitung rentang tanggal (Hari ini sampai 2 bulan ke depan)
             const hariIni = new Date();
             hariIni.setHours(0,0,0,0);
             const duaBulanLagi = new Date();
             duaBulanLagi.setMonth(duaBulanLagi.getMonth() + 2);
 
-            // Urutkan data berdasarkan tanggal terdekat
             data.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
 
             let dataDitemukan = false;
@@ -131,7 +128,6 @@
             data.forEach(item => {
                 const tglJadwal = new Date(item.tanggal);
                 
-                // FILTER: Hanya tampilkan jika masuk dalam rentang 2 bulan ke depan
                 if (tglJadwal >= hariIni && tglJadwal <= duaBulanLagi) {
                     dataDitemukan = true;
                     const formatUang = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.nilaiSewa);
@@ -159,7 +155,6 @@
         });
     }
 
-    // Jalankan fungsi muat data saat web pertama kali dibuka
     muatJadwal();
 </script>
 </body>
