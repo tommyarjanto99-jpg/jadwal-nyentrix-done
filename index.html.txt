@@ -79,7 +79,7 @@
 
 <script>
     // PENTING: Ganti teks di bawah ini dengan Web App URL yang kamu salin dari Google Apps Script
-    const API_URL = "https://script.google.com/macros/s/AKfycbwPbCZy1-SF8GJsWjKj_vDHICE-5hh3n0s_2EvHKWGphzL3ETj_5lq-VIdbrUGXiM13/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwgmKlBX-NmW3g9ojtWjzDk7TatuVLqgwWowMubdQzUxVvzLHjuW-kHPiv0LxkgxV6a/exec";
 
     // Fungsi Kirim Data ke Google Sheets
     document.getElementById('jadwalForm').addEventListener('submit', function(e) {
